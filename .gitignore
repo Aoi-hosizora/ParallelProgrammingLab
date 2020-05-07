@@ -1,0 +1,26 @@
+### Editor ###
+.vscode/
+.ionide/
+.history/
+.idea/
+
+### Build ###
+obj/
+bin/
+x86/
+x64/
+Debug/
+Release/
+cmake-build-debug/
+build/
+
+### VS ###
+ipch/
+*.filters
+*.user
+*.opensdf
+*.sdf
+*.suo
+
+### Lab ###
+doc/
