@@ -11,9 +11,9 @@ void lab_1_3();
 
 int main() {
     omp_set_num_threads(8);
-    lab_1_1();
-    printf("\n");
-    lab_1_2();
+    // lab_1_1();
+    // printf("\n");
+    // lab_1_2();
     printf("\n");
     lab_1_3();
 }
@@ -67,7 +67,7 @@ void lab_1_2() {
 
 // 奇偶交换排序
 void lab_1_3() {
-    int n = 20000;
+    int n = 20;
     int arr1[n];
     int arr2[n];
     for (int i = 0; i < n; i++) arr1[i] = i;
