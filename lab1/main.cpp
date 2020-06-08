@@ -11,9 +11,9 @@ void lab_1_3();
 
 int main() {
     omp_set_num_threads(8);
-    // lab_1_1();
-    // printf("\n");
-    // lab_1_2();
+    lab_1_1();
+    printf("\n");
+    lab_1_2();
     printf("\n");
     lab_1_3();
 }
@@ -44,7 +44,7 @@ void calc_time(const std::function<void()> &f, const std::function<void()> &g) {
 
 // 矩阵-向量乘法
 void lab_1_1() {
-    int n = 600, m = 400;
+    const int n = 600, m = 400;
     double mtx[n * m];
     double vec[m];
     double res[n];
@@ -67,7 +67,7 @@ void lab_1_2() {
 
 // 奇偶交换排序
 void lab_1_3() {
-    int n = 20;
+    const int n = 20;
     int arr1[n];
     int arr2[n];
     for (int i = 0; i < n; i++) arr1[i] = i;

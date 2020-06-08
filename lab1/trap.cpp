@@ -40,29 +40,8 @@ double N2::trap(double a, double b, int n) {
         return integral;
     };
 
-
-//     // 1.
-//     double _ans;
-// #pragma omp parallel default(none) shared(ans, n, a, b, _func) private(_ans)
-//     {
-//         _ans = _func(a, b, n);
-// #pragma omp critical
-//         ans += _ans;
-//     }
-
-    // 2.
 #pragma omp parallel default(none) reduction(+: ans) shared(n, a, b, _func)
     ans += _func(a, b, n);
-
-//     // 3.
-//     int i;
-//     double h = (b - a) / n;
-//     ans = (f(b) - f(a)) / 2;
-// #pragma omp parallel for default(none) reduction(+: ans) shared(n, a, h)
-//     for (i = 0; i < n - 1; i++) {
-//         ans += f(a + i * h);
-//     }
-//     ans *= h;
 
     // printf("%lf\n", ans);
     return ans;

@@ -25,3 +25,11 @@ ipch/
 ### Lab ###
 doc/
 report/
+*.rar
+*.zip
+*.doc
+*.docs
+
+### Big Project ###
+*.out
+*.txt
