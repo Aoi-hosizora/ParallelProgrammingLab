@@ -1,9 +1,9 @@
 #include <cstdio>
-#include <omp.h>
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
 #include <cstdint>
+#include <cstring>
+#include <ctime>
+#include <cmath>
+#include <cstdlib>
 
 // a-g 1000 2-4
 // const int MAX_LINE_LENGTH = 6;
@@ -26,45 +26,36 @@
 // const int MAX_LINES = 1000000;
 
 // 0-9a-zA-Z 10000000 10-20
-const int MAX_LINE_LENGTH = 22;
-const char PATH[] = "G:/parallel/10M.txt";
-const int MAX_LINES = 10000000;
+// const int MAX_LINE_LENGTH = 22;
+// const char PATH[] = "G:/parallel/10M.txt";
+// const int MAX_LINES = 10000000;
 
 // 0-9a-zA-Z 100000000 10-50
-// const int MAX_LINE_LENGTH = 52;
-// const char PATH[] = "G:/parallel/100M.txt";
-// const int MAX_LINES = 100000000;
+const int MAX_LINE_LENGTH = 52;
+const char PATH[] = "G:/parallel/100M.txt";
+const int MAX_LINES = 100000000;
 
 // 0-9a-zA-Z 1000000000 10-50
 // const int MAX_LINE_LENGTH = 52;
 // const char PATH[] = "G:/parallel/1G.txt";
 // const int MAX_LINES = 1000000000;
 
-uint16_t chars_to_uint16(const char *, int);
-
 void read_file();
 
-void with_omp();
+uint16_t chars_to_uint16(const char *, int);
 
-int thread_nums;
+void with_sequential();
 
 char **data;
 uint16_t **line_bits;
 int bits_length;
 
 int main() {
-    omp_set_num_threads(4);
-#pragma omp parallel default(none) shared(thread_nums)
-    {
-#pragma omp single
-        thread_nums = omp_get_num_threads();
-    }
-
-    double start = omp_get_wtime();
-    with_omp();
-    double end = omp_get_wtime();
-    double time_span = end - start;
-    printf("omp: %lfs\n", time_span);
+    double start = clock();
+    with_sequential();
+    double end = clock();
+    double time_span = (double) (end - start) / CLOCKS_PER_SEC;
+    printf("sequential: %lfs", time_span);
 }
 
 void read_file() {
@@ -122,7 +113,7 @@ uint16_t chars_to_uint16(const char *line, int part) {
 #pragma clang diagnostic pop
 }
 
-void with_omp() {
+void with_sequential() {
     read_file();
 
     // 1. 基数排序
@@ -133,48 +124,25 @@ void with_omp() {
     for (int i = 0; i < MAX_LINES; i++) {
         indies[i] = i;
     }
-
-    auto cnt = new int *[thread_nums + 1]; // p + 1
-    for (int i = 0; i <= thread_nums; i++) {
-        cnt[i] = new int[UINT16_MAX + 1];
-    }
+    auto cnt = new int[UINT16_MAX + 1];
 
     // 按照 int16 分组
     uint16_t num;
-    int my_rank = 0;
-    for (int part = bits_length - 1; part >= 0; part--) {
-        // 分线程计数
-        for (int i = 0; i < thread_nums + 1; i++) {
-            memset(cnt[i], 0, (UINT16_MAX + 1) * sizeof(int));
-        }
-#pragma omp parallel for default(none) shared(part, line_bits, indies, cnt) private(my_rank, num)
+    for (int part = bits_length; part >= 0; part--) { // 每个数据计数
+        // 顺序计数
+        memset(cnt, 0, (UINT16_MAX + 1) * sizeof(int));
         for (int i = 0; i < MAX_LINES; i++) {
-            my_rank = omp_get_thread_num();
             num = line_bits[indies[i]][part];
-            cnt[my_rank][num]++;
+            cnt[num]++;
         }
-
-        // 合并 cnt 处理前缀和
-        for (int i = 0; i < thread_nums; i++) {
-            for (int j = 0; j < UINT16_MAX + 1; j++) {
-                cnt[thread_nums][j] += cnt[i][j];
-            }
+        // 前缀和
+        for (int n = 1; n <= UINT16_MAX; n++) {
+            cnt[n] += cnt[n - 1];
         }
-        for (int i = 1; i < UINT16_MAX + 1; i++) {
-            cnt[thread_nums][i] += cnt[thread_nums][i - 1];
-        }
-        for (int i = thread_nums - 1; i >= 0; i--) {
-            for (int j = 0; j < UINT16_MAX + 1; j++) {
-                cnt[i][j] = cnt[i + 1][j] - cnt[i][j]; // 各个线程对应低位取值为 0 ~ 65535 的元素的存放位置
-            }
-        }
-
-        // 重新排放辅助数组
-#pragma omp parallel for default(none) shared(part, line_bits, indies, indies_tmp, cnt) private(num, my_rank)
-        for (int i = 0; i < MAX_LINES; i++) { // 从前往后，cnt 中存储的是从此处开始存
-            my_rank = omp_get_thread_num();
+        // 调整下标数组
+        for (int i = MAX_LINES - 1; i >= 0; i--) { // 从后往前，cnt 中存储的是存到此处为止
             num = line_bits[indies[i]][part];
-            indies_tmp[cnt[my_rank][num]++] = indies[i];
+            indies_tmp[--cnt[num]] = indies[i];
         }
         memcpy(indies, indies_tmp, MAX_LINES * sizeof(int));
     }
@@ -196,10 +164,8 @@ void with_omp() {
     }
     printf("(Group number: %d)\n", flags[MAX_LINES - 1]);
 
+
     delete[] flags;
-    for (int i = 0; i < thread_nums + 1; i++) {
-        delete[] cnt[i];
-    }
     delete[] cnt;
     delete[] indies_tmp;
     delete[] indies;
