@@ -20,20 +20,34 @@
 // const char PATH[] = "G:/parallel/100K.txt";
 // const int MAX_LINES = 100000;
 
+// 数据集1
 // 0-9a-gA-G 1000000 10-20
 // const int MAX_LINE_LENGTH = 22;
 // const char PATH[] = "G:/parallel/1M.txt";
 // const int MAX_LINES = 1000000;
 
+// 数据集2
 // 0-9a-zA-Z 10000000 10-20
 // const int MAX_LINE_LENGTH = 22;
 // const char PATH[] = "G:/parallel/10M.txt";
 // const int MAX_LINES = 10000000;
 
+// 数据集3
+// 0-9a-zA-Z 20000000 10-20
+// const int MAX_LINE_LENGTH = 22;
+// const char PATH[] = "G:/parallel/20M.txt";
+// const int MAX_LINES = 20000000;
+
+// 数据集4
+// 0-9a-zA-Z 5000000 20-100
+const int MAX_LINE_LENGTH = 102;
+const char PATH[] = "G:/parallel/5M.txt";
+const int MAX_LINES = 5000000;
+
 // 0-9a-zA-Z 100000000 10-50
-const int MAX_LINE_LENGTH = 52;
-const char PATH[] = "G:/parallel/100M.txt";
-const int MAX_LINES = 100000000;
+// const int MAX_LINE_LENGTH = 52;
+// const char PATH[] = "G:/parallel/100M.txt";
+// const int MAX_LINES = 100000000;
 
 // 0-9a-zA-Z 1000000000 10-50
 // const int MAX_LINE_LENGTH = 52;
@@ -46,6 +60,7 @@ uint16_t chars_to_uint16(const char *, int);
 
 void with_sequential();
 
+const int UINT16_MAX_1 = UINT16_MAX + 1;
 char **data;
 uint16_t **line_bits;
 int bits_length;
@@ -124,13 +139,13 @@ void with_sequential() {
     for (int i = 0; i < MAX_LINES; i++) {
         indies[i] = i;
     }
-    auto cnt = new int[UINT16_MAX + 1];
+    auto cnt = new int[UINT16_MAX_1];
 
     // 按照 int16 分组
     uint16_t num;
     for (int part = bits_length; part >= 0; part--) { // 每个数据计数
         // 顺序计数
-        memset(cnt, 0, (UINT16_MAX + 1) * sizeof(int));
+        memset(cnt, 0, UINT16_MAX_1 * sizeof(int));
         for (int i = 0; i < MAX_LINES; i++) {
             num = line_bits[indies[i]][part];
             cnt[num]++;

@@ -20,15 +20,29 @@
 // const char PATH[] = "G:/parallel/100K.txt";
 // const int MAX_LINES = 100000;
 
+// 数据集1
 // 0-9a-gA-G 1000000 10-20
 // const int MAX_LINE_LENGTH = 22;
 // const char PATH[] = "G:/parallel/1M.txt";
 // const int MAX_LINES = 1000000;
 
+// 数据集2
 // 0-9a-zA-Z 10000000 10-20
 const int MAX_LINE_LENGTH = 22;
 const char PATH[] = "G:/parallel/10M.txt";
 const int MAX_LINES = 10000000;
+
+// 数据集3
+// 0-9a-zA-Z 20000000 10-20
+// const int MAX_LINE_LENGTH = 22;
+// const char PATH[] = "G:/parallel/20M.txt";
+// const int MAX_LINES = 20000000;
+
+// 数据集4
+// 0-9a-zA-Z 5000000 20-100
+// const int MAX_LINE_LENGTH = 102;
+// const char PATH[] = "G:/parallel/5M.txt";
+// const int MAX_LINES = 5000000;
 
 // 0-9a-zA-Z 100000000 10-50
 // const int MAX_LINE_LENGTH = 52;
@@ -48,12 +62,13 @@ void with_omp();
 
 int thread_nums;
 
+const int UINT16_MAX_1 = UINT16_MAX + 1;
 char **data;
 uint16_t **line_bits;
 int bits_length;
 
 int main() {
-    omp_set_num_threads(4);
+    omp_set_num_threads(16);
 #pragma omp parallel default(none) shared(thread_nums)
     {
 #pragma omp single
@@ -136,7 +151,7 @@ void with_omp() {
 
     auto cnt = new int *[thread_nums + 1]; // p + 1
     for (int i = 0; i <= thread_nums; i++) {
-        cnt[i] = new int[UINT16_MAX + 1];
+        cnt[i] = new int[UINT16_MAX_1];
     }
 
     // 按照 int16 分组
@@ -145,7 +160,7 @@ void with_omp() {
     for (int part = bits_length - 1; part >= 0; part--) {
         // 分线程计数
         for (int i = 0; i < thread_nums + 1; i++) {
-            memset(cnt[i], 0, (UINT16_MAX + 1) * sizeof(int));
+            memset(cnt[i], 0, UINT16_MAX_1 * sizeof(int));
         }
 #pragma omp parallel for default(none) shared(part, line_bits, indies, cnt) private(my_rank, num)
         for (int i = 0; i < MAX_LINES; i++) {
@@ -156,15 +171,15 @@ void with_omp() {
 
         // 合并 cnt 处理前缀和
         for (int i = 0; i < thread_nums; i++) {
-            for (int j = 0; j < UINT16_MAX + 1; j++) {
+            for (int j = 0; j < UINT16_MAX_1; j++) {
                 cnt[thread_nums][j] += cnt[i][j];
             }
         }
-        for (int i = 1; i < UINT16_MAX + 1; i++) {
+        for (int i = 1; i < UINT16_MAX_1; i++) {
             cnt[thread_nums][i] += cnt[thread_nums][i - 1];
         }
         for (int i = thread_nums - 1; i >= 0; i--) {
-            for (int j = 0; j < UINT16_MAX + 1; j++) {
+            for (int j = 0; j < UINT16_MAX_1; j++) {
                 cnt[i][j] = cnt[i + 1][j] - cnt[i][j]; // 各个线程对应低位取值为 0 ~ 65535 的元素的存放位置
             }
         }

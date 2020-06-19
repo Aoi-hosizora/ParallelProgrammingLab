@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <omp.h>
 #include <mpi.h>
 
 // a-g 1000 2-4
@@ -61,7 +62,7 @@ void read_file();
 
 void with_mpi();
 
-int my_rank, comm_sz;
+int my_rank, comm_sz, thread_nums;
 
 const int UINT16_MAX_1 = UINT16_MAX + 1;
 char **data;
@@ -71,6 +72,13 @@ int bits_length;
 int main() {
     MPI_Init(nullptr, nullptr);
 
+    omp_set_num_threads(8);
+#pragma omp parallel default(none) shared(thread_nums)
+    {
+#pragma omp single
+        thread_nums = omp_get_num_threads();
+    }
+
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
 
@@ -79,7 +87,7 @@ int main() {
     double end = MPI_Wtime();
     double time_span = end - start;
     if (my_rank == 0) {
-        printf("mpi: %lfs\n", time_span);
+        printf("mpi with omp: %lfs\n", time_span);
     }
 
     MPI_Finalize();
@@ -159,6 +167,10 @@ void with_mpi() {
     for (int i = 0; i <= comm_sz; i++) {
         cnt[i] = new int[UINT16_MAX_1];
     }
+    auto cnt_ts = new int *[thread_nums]; // th
+    for (int i = 0; i < thread_nums; i++) {
+        cnt_ts[i] = new int[UINT16_MAX_1];
+    }
 
     // 拆分进程
     int _len = ceil((double) MAX_LINES / comm_sz);
@@ -175,13 +187,23 @@ void with_mpi() {
         } else {
             memset(cnt[my_rank], 0, UINT16_MAX_1 * sizeof(int));
         }
+        for (int i = 0; i < thread_nums; i++) {
+            memset(cnt_ts[i], 0, UINT16_MAX_1 * sizeof(int));
+        }
         // 同步 indies 辅助数组
         MPI_Bcast(indies, MAX_LINES, MPI_INT, 0, MPI_COMM_WORLD);
 
         // 顺序计数
+#pragma omp parallel for default(none) shared(_from, _to, line_bits, indies, part, cnt_ts) private(num)
         for (int i = _from; i < _to; i++) {
+            int my_rank_p = omp_get_thread_num();
             num = line_bits[indies[i]][part];
-            cnt[my_rank][num]++;
+            cnt_ts[my_rank_p][num]++;
+        }
+        for (int i = 0; i < thread_nums; i++) { // 整合线程结果
+            for (int j = 0; j < UINT16_MAX_1; j++) {
+                cnt[my_rank][j] += cnt_ts[i][j];
+            }
         }
 
         // 合并 cnt 处理前缀和
@@ -224,6 +246,7 @@ void with_mpi() {
         if (my_rank != 0) {
             MPI_Send(indies_tmp[my_rank], MAX_LINES, MPI_INT, 0, 3, MPI_COMM_WORLD);
         } else {
+#pragma omp parallel for default(none) shared(indies_tmp, indies)
             for (int i = 0; i < MAX_LINES; i++) {
                 if (indies_tmp[0][i] != -1) {
                     indies[i] = indies_tmp[0][i];
@@ -231,6 +254,7 @@ void with_mpi() {
             }
             for (int i = 1; i < comm_sz; i++) {
                 MPI_Recv(indies_tmp[i], MAX_LINES, MPI_INT, i, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+#pragma omp parallel for default(none) shared(indies_tmp, indies, i)
                 for (int j = 0; j < MAX_LINES; j++) {
                     if (indies_tmp[i][j] != -1) {
                         indies[j] = indies_tmp[i][j];
@@ -262,6 +286,10 @@ void with_mpi() {
     }
 
     delete[] flags;
+    for (int i = 0; i < thread_nums; i++) {
+        delete[] cnt_ts[i];
+    }
+    delete[] cnt_ts;
     for (int i = 0; i < comm_sz + 1; i++) {
         delete[] cnt[i];
     }
