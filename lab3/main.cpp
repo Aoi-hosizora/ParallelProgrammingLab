@@ -1,8 +1,8 @@
 #include <cstdio>
 #include <cmath>
 #include <algorithm>
-#include <random>
-#include <ctime>
+// #include <random>
+// #include <ctime>
 #include <mpi.h>
 #include <omp.h>
 #include <cstring>
@@ -16,7 +16,7 @@ void without_mpi();
 
 void with_mpi();
 
-int n = 100000, m = 100;
+int n = 100000, m = 1000;
 double *mtx;
 double *vec;
 
@@ -33,9 +33,9 @@ int main() {
     if (my_rank == 0) {
         for (int i = 0; i < n * m; i++) mtx[i] = 20 + i % 80;
         for (int i = 0; i < m; i++) vec[i] = 20 + i % 80;
-        unsigned seed = time(0);
-        std::shuffle(mtx, mtx + n * m, std::default_random_engine(seed));
-        std::shuffle(vec, vec + m, std::default_random_engine(seed));
+        // unsigned seed = time(0);
+        // std::shuffle(mtx, mtx + n * m, std::default_random_engine(seed));
+        // std::shuffle(vec, vec + m, std::default_random_engine(seed));
     }
 
     // sequential
@@ -60,7 +60,7 @@ int main() {
     if (my_rank == 0) {
         double speedup = seq_timespan / par_timespan;
         printf("speedup: %lf\n", speedup);
-        double efficiency = speedup / comm_sz;
+        double efficiency = speedup / 8; // comm_sz
         printf("efficiency: %lf\n", efficiency);
     }
 
@@ -92,54 +92,34 @@ void without_mpi() {
 #pragma ide diagnostic ignored "UnusedValue"
 
 void with_mpi() {
-    int _length = ceil((double) n / comm_sz);
-    int _start = my_rank * _length;
-    int _end = std::min(_start + _length, n);
+    // 需要进程数能够整除矩阵行数
+    int _length = floor((double) n / comm_sz);
+    // 每个进程的矩阵
+    double *_mtx = new double[_length * m];
 
-    int _row_size = _end - _start;
-    double *_mtx = new double[_row_size * m];
-
-    if (my_rank == 0) {
-        memcpy(_mtx, mtx, _length * sizeof(double));
-        for (int i = 1; i < comm_sz; i++) {
-            int is = i * _length;
-            int ie = std::min(is + _length, n);
-            int irs = ie - is;
-            MPI_Send(mtx + is * m, irs * m, MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
-        }
-    } else {
-        MPI_Recv(_mtx, _row_size * m, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
+    // 为每个进程发布其子矩阵
+    MPI_Scatter(mtx, _length, MPI_DOUBLE, _mtx, _length, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    // 广播向量
     MPI_Bcast(vec, m, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    double *_res = new double[_row_size]; // n * 1
-    memset(_res, 0, _row_size * sizeof(double));
+    // 记录每个进程的计算结果
+    double *_res = new double[_length]; // n * 1
+    memset(_res, 0, _length * sizeof(double));
 
-#pragma omp parallel for default(none) shared(_row_size, _res, _mtx, vec, m)
-    for (int r = 0; r < _row_size; r++) {
+    // 多线程，对每一行的计算并发进行
+#pragma omp parallel for default(none) shared(_length, _res, _mtx, vec, m)
+    for (int r = 0; r < _length; r++) {
+        int s = r * m;
         for (int c = 0; c < m; c++) {
-            _res[r] += _mtx[r * m + c] * vec[c];
+            _res[r] += _mtx[s + c] * vec[c];
         }
     }
 
+    // 最终结果，汇总到 0 号进程
     double *res = new double[n];
-    memset(res, 0, n * sizeof(double));
-    if (my_rank != 0) {
-        MPI_Send(_res, _row_size, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
-    } else {
-        memcpy(res, _res, _row_size * sizeof(double));
-        for (int i = 1; i < comm_sz; i++) {
-            MPI_Recv(_res, _row_size, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            int is = i * _length;
-            int ie = std::min(is + _length, n);
-            int irs = ie - is;
-#pragma omp parallel for default(none) shared(is, irs, _res, res)
-            for (int j = 0; j < irs; j++) {
-                res[j + is] = _res[j];
-            }
-        }
-    }
+    MPI_Gather(_res, _length, MPI_DOUBLE, res, _length, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+    // 输出结果
     if (my_rank == 0) {
         for (int i = 0; i < 5; i++) {
             printf("%lf ", res[i]);
