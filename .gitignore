@@ -14,6 +14,8 @@ Debug/
 Release/
 cmake-build-debug/
 build/
+CMakeFiles/
+CMakeCache.txt
 
 ### VS ###
 ipch/
@@ -26,6 +28,7 @@ ipch/
 ### Lab ###
 doc/
 report/
+r/
 *.rar
 *.zip
 *.doc

@@ -1,4 +1,4 @@
-#include <cstdio>
+﻿#include <cstdio>
 #include <cmath>
 #include <mpi.h>
 #include <omp.h>
@@ -22,7 +22,7 @@ int main() {
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    omp_set_num_threads(8);
+    omp_set_num_threads(16);
 
     // sequential
     double seq_start, seq_end, seq_timespan;
@@ -48,7 +48,7 @@ int main() {
     if (my_rank == 0) {
         double speedup = seq_timespan / par_timespan;
         printf("speedup: %lf\n", speedup);
-        double efficiency = speedup / 8;
+        double efficiency = speedup / 32;
         printf("efficiency: %lf\n", efficiency);
     }
 
