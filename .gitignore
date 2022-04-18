@@ -6,34 +6,5 @@
 *.lnk
 
 ### Build ###
-obj/
-bin/
-x86/
-x64/
-Debug/
-Release/
 cmake-build-debug/
 build/
-CMakeFiles/
-CMakeCache.txt
-
-### VS ###
-ipch/
-*.filters
-*.user
-*.opensdf
-*.sdf
-*.suo
-
-### Lab ###
-doc/
-report/
-r/
-*.rar
-*.zip
-*.doc
-*.docs
-*.tmp
-
-### Big Project ###
-*.out

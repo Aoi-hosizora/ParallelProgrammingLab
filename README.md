@@ -1,9 +1,9 @@
 # ParallelProgrammingLab
 
 + 2020 SCUT Parallel Programming Experiment and Final Project (with bad-smell and unoptimized code)
-+ 2022 SCUT Parallel and Distributed Computing Experiment
++ 2022 SCUT Parallel and Distributed Computing Experiment (in progress)
 
-### Contents
+### Contents (2020)
 
 + lab1 - OpenMP
     + matrix-vector multiplication
@@ -19,18 +19,17 @@
     + trapezoidal integration
 + groupby - Sequential, OpenMP, MPI, OpenMP + MPI
     + group by
-+ pdc_lab1 - Hadoop (2022)
-    + crawler + map reduce (TODO)
-+ pdc_lab2 - MPI (2022)
-    + PSRS sort (TODO)
+
+### Contents (2022)
+
++ pdc_lab1 - Hadoop
+    + crawler + map reduce (in progress)
++ pdc_lab2 - MPI
+    + PSRS sort (in progress)
 
 ### Build and run
 
-1. Use CLion
-
-[clion_configuration.png](./lab4/clion_configuration.png)
-
-2. Compile manually
+1. Compile manually
 
 ```bash
 # build
@@ -44,3 +43,7 @@ make -j8
 lab2.exe # single process
 mpiexec -n 8 lab2.exe # multiple processes
 ```
+
+2. Use CLion
+
+![clion_configuration.png](./lab4/clion_configuration.png)
