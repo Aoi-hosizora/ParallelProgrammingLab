@@ -19,8 +19,10 @@
     + trapezoidal integration
 + groupby - Sequential, OpenMP, MPI, OpenMP + MPI
     + group by
-+ pdc - MPI (2022)
-    + PSRS sort
++ pdc_lab1 - Hadoop (2022)
+    + crawler + map reduce (TODO)
++ pdc_lab2 - MPI (2022)
+    + PSRS sort (TODO)
 
 ### Build and run
 
