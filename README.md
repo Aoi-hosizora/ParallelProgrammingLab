@@ -1,7 +1,7 @@
 # ParallelProgrammingLab
 
 + 2020 SCUT Parallel Programming Experiment and Final Project (with bad-smell and unoptimized code)
-+ 2022 SCUT Parallel and Distributed Computing Experiment (in progress)
++ 2022 SCUT Parallel and Distributed Computing Experiment
 
 ### Contents (2020)
 
@@ -23,9 +23,10 @@
 ### Contents (2022)
 
 + pdc_lab1 - Hadoop
-    + crawler + map reduce (in progress)
+    + web crawler
+    + inverted index building using hadoop and map reduce
 + pdc_lab2 - MPI
-    + PSRS sort (in progress)
+    + PSRS sort
 
 ### Build and run
 

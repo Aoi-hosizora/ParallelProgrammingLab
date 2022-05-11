@@ -9,12 +9,12 @@ inline float rand_float(float s) {
     return 4 * s * (1 - s);
 }
 
-void matrix_gen(float *a, uint64_t N, float seed) {
+void matrix_gen(float *a, uint64_t n, float seed) {
     float s = seed;
-    for (uint64_t i = 0; i < N; i++) {
+    for (uint64_t i = 0; i < n; i++) {
         do {
             s = rand_float(s);
-        } while (s < 1e-6);
+        } while (s < 1e-8);
         a[i] = s;
     }
 }
@@ -39,7 +39,9 @@ int main() {
         printf("Failed to create file.\n");
         exit(-1);
     }
-    fwrite(data, sizeof(float), N, f);
+    for (int i = 0; i < N; i++) {
+        fwrite(data + i, sizeof(float), 1, f);
+    }
     fclose(f);
 
     // qsort

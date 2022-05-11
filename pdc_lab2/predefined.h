@@ -4,14 +4,9 @@
 #define _PREDEFINED_H_
 
 // 数据量
-#define DATA 256
-// #define DATA 1024
+// #define DATA 256
+#define DATA 1024
 // #define DATA 4096
-
-// 进程数
-const int P = 2;
-// const int P = 4;
-// const int P = 8;
 
 #if DATA == 256
 const uint64_t N = (uint64_t) 256 * 1024 * 1024;
